@@ -1,0 +1,20 @@
+# Credenciales y secretos - NUNCA subir a GitHub
+credentials.json
+id_CONFIDENTIAL.json
+uri.json
+
+# Archivos temporales de prueba
+test_db.py
+
+# Artefactos del modelo (son grandes y se regeneran)
+model.pkl
+umbral.json
+score.py
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Jupyter checkpoints
+.ipynb_checkpoints/

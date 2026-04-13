@@ -31,7 +31,6 @@ AZURE_SUBSCRIPTION_ID = _creds["subscription_id"]
 AZURE_RESOURCE_GROUP  = "Papus"
 AZURE_WORKSPACE_NAME  = "workspace"
 AZURE_LOCATION        = "eastus"
-AZURE_TENANT_ID       = _creds.get("tenant_id")  # None si no aplica
 
 # --- Artefactos ---
 MODEL_PATH  = "model.pkl"
@@ -39,12 +38,13 @@ UMBRAL_PATH = "umbral.json"
 MODEL_NAME  = "churn_model"
 SERVICE_NAME = "churn-service"
 
+
 # ============================================================
 
 
-from database import DatabaseConnector
-from model    import ChurnModel
-from deploy   import AzureDeployer
+from functions.database import DatabaseConnector
+from functions.model    import ChurnModel
+from functions.deploy   import AzureDeployer
 
 
 def main():
@@ -58,7 +58,8 @@ def main():
     with DatabaseConnector(SQL_SERVER, SQL_DATABASE, SQL_USER, SQL_PASSWORD) as db:
         data = db.get_churn_data(table=SQL_TABLE)
 
-    print(f"Datos cargados: {data.shape[0]} filas x {data.shape[1]} columnas.\n")
+    print(data.columns)
+
 
     # ----------------------------------------------------------
     # PASO 2: Entrenar el modelo
@@ -84,7 +85,6 @@ def main():
         resource_group=AZURE_RESOURCE_GROUP,
         workspace_name=AZURE_WORKSPACE_NAME,
         location=AZURE_LOCATION,
-        tenant_id=AZURE_TENANT_ID,
     )
 
     scoring_uri = deployer.full_deploy(

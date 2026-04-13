@@ -12,10 +12,12 @@ Dependencias: azureml-sdk
 
 from typing import List, Optional
 from azureml.core.authentication import InteractiveLoginAuthentication
+from azureml.core import Workspace
 from azureml.core.conda_dependencies import CondaDependencies
 from azureml.core.environment import Environment
 from azureml.core.model import InferenceConfig, Model
 from azureml.core.webservice import AciWebservice
+import json
 
 
 # --------------------------------------------------------------------------

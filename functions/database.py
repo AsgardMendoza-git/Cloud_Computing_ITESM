@@ -13,17 +13,8 @@ import pandas as pd
 
 
 class DatabaseConnector:
-    """Gestiona la conexión con la base de datos Azure SQL y la carga de datos."""
 
     def __init__(self, server: str, database: str, username: str, password: str):
-        """
-        Parámetros
-        ----------
-        server   : Nombre del servidor Azure SQL  (ej. 'mi-servidor.database.windows.net')
-        database : Nombre de la base de datos     (ej. 'ChurnDB')
-        username : Usuario con acceso             (ej. 'adminuser@mi-servidor')
-        password : Contraseña del usuario
-        """
         self.server = server
         self.database = database
         self.username = username
@@ -45,7 +36,7 @@ class DatabaseConnector:
             "Connection Timeout=60;"
         )
         self._connection = pyodbc.connect(connection_string)
-        print(f"[DatabaseConnector] Conectado a '{self.database}' en '{self.server}'.")
+        print(f"[DatabaseConnector] Conectado a '{self.database}'")
 
     def disconnect(self) -> None:
         """Cierra la conexión si está abierta."""

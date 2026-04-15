@@ -62,6 +62,8 @@ def run(raw_data):
 class AzureDeployer:
     """Registra un modelo en AzureML y lo despliega como ACI web service."""
 
+    REQUIRED_CREDENTIAL_KEYS = ["subscription_id"]
+
     def __init__(
         self,
         subscription_id: str,
@@ -88,6 +90,37 @@ class AzureDeployer:
         self._ws = None  # type: Optional[Workspace]
         self._registered_model = None  # type: Optional[Model]
         self._service = None
+
+    @classmethod
+    def from_credentials_file(
+        cls,
+        credentials_path: str = "credentials.json",
+        resource_group: str = "Papus",
+        workspace_name: str = "workspace",
+        location: str = "eastus",
+    ) -> "AzureDeployer":
+        """
+        Construye AzureDeployer leyendo credenciales de un archivo JSON.
+
+        Requiere al menos la llave: subscription_id.
+        tenant_id es opcional.
+        """
+        with open(credentials_path, "r") as f:
+            creds = json.load(f)
+
+        missing = [k for k in cls.REQUIRED_CREDENTIAL_KEYS if k not in creds or not creds[k]]
+        if missing:
+            raise ValueError(
+                f"Faltan credenciales requeridas en '{credentials_path}': {missing}"
+            )
+
+        return cls(
+            subscription_id=creds["subscription_id"],
+            resource_group=resource_group,
+            workspace_name=workspace_name,
+            location=location,
+            tenant_id=creds.get("tenant_id"),
+        )
 
     # ------------------------------------------------------------------
     # Workspace
@@ -179,6 +212,7 @@ class AzureDeployer:
         service_name: str = "churn-service",
         score_script: str = "score.py",
         conda_packages: Optional[List[str]] = None,
+        pip_packages: Optional[List[str]] = None,
         cpu_cores: float = 0.5,
         memory_gb: float = 1.0,
     ) -> str:
@@ -189,7 +223,8 @@ class AzureDeployer:
         ----------
         service_name   : Nombre del servicio en AzureML
         score_script   : Ruta al script de scoring
-        conda_packages : Paquetes conda para el entorno (default: pandas + scikit-learn)
+        conda_packages : Paquetes conda para el entorno (default: pandas + scikit-learn + numpy)
+        pip_packages   : Paquetes pip para el entorno (default: azureml-defaults + joblib)
         cpu_cores      : Núcleos de CPU asignados al contenedor
         memory_gb      : Memoria RAM asignada al contenedor
 
@@ -201,12 +236,16 @@ class AzureDeployer:
             raise RuntimeError("Llama a setup_workspace() y register_model() antes de deploy().")
 
         if conda_packages is None:
-            conda_packages = ["pandas", "scikit-learn"]
+            conda_packages = ["pandas", "scikit-learn", "numpy"]
+
+        if pip_packages is None:
+            pip_packages = ["azureml-defaults", "joblib"]
 
         # Entorno virtual con las dependencias del modelo
         env = Environment("churn-env")
         env.python.conda_dependencies = CondaDependencies.create(
-            conda_packages=conda_packages
+            conda_packages=conda_packages,
+            pip_packages=pip_packages,
         )
 
         inference_config = InferenceConfig(

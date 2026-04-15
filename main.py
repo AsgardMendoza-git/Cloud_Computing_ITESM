@@ -36,7 +36,7 @@ AZURE_LOCATION        = "eastus"
 MODEL_PATH  = "model.pkl"
 UMBRAL_PATH = "umbral.json"
 MODEL_NAME  = "churn_model"
-SERVICE_NAME = "churn-service"
+SERVICE_NAME = "churn-service-v2"
 
 
 # ============================================================

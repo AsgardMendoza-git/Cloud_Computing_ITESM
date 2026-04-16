@@ -39,23 +39,67 @@ def init():
 def sigmoid(x):
     return [1 / (1 + np.exp(-v)) for v in x]
 
+
+def _payload_to_dataframe(raw_data):
+    payload = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
+
+    if isinstance(payload, dict):
+        if "data" in payload:
+            data_payload = payload["data"]
+        elif "inputs" in payload:
+            data_payload = payload["inputs"]
+        else:
+            raise KeyError("Expected payload key 'data' or 'inputs'.")
+    elif isinstance(payload, list):
+        data_payload = payload
+    else:
+        raise TypeError("Payload must be a dict, list, or JSON string.")
+
+    if isinstance(data_payload, dict):
+        return pd.DataFrame(data_payload)
+
+    if isinstance(data_payload, list):
+        if len(data_payload) == 0:
+            return pd.DataFrame()
+
+        if len(data_payload) == 1 and isinstance(data_payload[0], dict):
+            first = data_payload[0]
+            if all(isinstance(v, list) for v in first.values()):
+                return pd.DataFrame(first)
+
+        return pd.DataFrame(data_payload)
+
+    raise TypeError("'data'/'inputs' value must be dict or list.")
+
 def run(raw_data):
     try:
-        data = json.loads(raw_data)["data"][0]
-        data = pd.DataFrame(data)
+        data = _payload_to_dataframe(raw_data)
+
+        if data.empty:
+            return {"error": "Input payload produced an empty DataFrame."}
 
         # Misma lógica que zorrouno.processor.embbed para SalesLT.Product
         keep = ["StandardCost", "ListPrice", "Weight", "ProductCategoryID", "ProductModelID"]
-        data = data[[c for c in keep if c in data.columns]].dropna()
+        missing = [c for c in keep if c not in data.columns]
+        if missing:
+            return {
+                "error": "Missing required feature columns.",
+                "required_columns": keep,
+                "missing_columns": missing,
+            }
+
+        data = data[keep].dropna()
+        if data.empty:
+            return {"error": "No rows left after dropping null feature values."}
 
         result = model.predict(data).tolist()
         result_sigmoid = sigmoid(result)
         umbral = {umbral}
         result_finals = [1 if x > umbral else 0 for x in result_sigmoid]
 
-        return json.dumps(result_finals)
+        return {"predictions": result_finals}
     except Exception as e:
-        return json.dumps(str(e))
+        return {"error": str(e)}
 '''
 
 
